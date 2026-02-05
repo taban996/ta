@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Premium ID Store</title>
+
+<style>
+*{box-sizing:border-box;font-family:system-ui}
+body{
+  margin:0;
+  background:linear-gradient(180deg,#5b4bdb,#7b6cf6);
+  padding:16px;
+}
+.container{max-width:420px;margin:auto}
+.card{
+  background:#fff;
+  border-radius:24px;
+  padding:18px;
+  margin-bottom:18px;
+  box-shadow:0 15px 35px rgba(0,0,0,.25)
+}
+.header{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  font-weight:800;
+  color:#6b5cff
+}
+.badge{
+  background:#ffebeb;
+  color:#ff3b3b;
+  padding:6px 14px;
+  border-radius:30px;
+  font-weight:700;
+  font-size:13px;
+  margin:12px auto;
+  width:max-content
+}
+.stock{
+  text-align:center;
+  font-size:22px;
+  font-weight:900;
+  color:#6b5cff
+}
+.note{
+  background:#f3f4ff;
+  border-radius:18px;
+  padding:14px;
+  font-size:13px;
+  color:#555;
+  margin-top:10px
+}
+.options{
+  display:grid;
+  grid-template-columns:repeat(2,1fr);
+  gap:14px;
+  margin-top:14px
+}
+.box{
+  background:#f4f6ff;
+  border-radius:18px;
+  padding:14px;
+  text-align:center;
+  font-weight:800;
+  cursor:pointer;
+  border:2px solid transparent
+}
+.box span{display:block;font-size:13px;color:#666;margin-top:4px}
+.box.active{
+  border-color:#6b5cff;
+  background:#eef0ff;
+  color:#6b5cff
+}
+.custom{
+  margin-top:12px;
+  padding:14px;
+  border-radius:16px;
+  border:1.5px solid #ddd;
+  width:100%
+}
+.buy{
+  width:100%;
+  margin-top:18px;
+  padding:16px;
+  border:none;
+  border-radius:40px;
+  font-size:17px;
+  font-weight:900;
+  color:#fff;
+  background:linear-gradient(90deg,#ff4d4d,#ff2f7b);
+  transition: transform 0.2s;
+}
+.buy:hover{transform: scale(1.05);}
+.icons{
+  display:flex;
+  justify-content:space-around;
+  margin-top:18px;
+  font-size:13px;
+  color:#555
+}
+.icon{text-align:center;cursor:pointer}
+.icon div{
+  width:44px;height:44px;
+  border-radius:50%;
+  background:#eef0ff;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  margin:auto auto 6px;
+  color:#6b5cff;
+  font-size:20px;
+}
+.list{
+  background:#6b5cff;
+  color:#fff;
+  border-radius:22px;
+  padding:18px
+}
+.list p{margin:10px 0;font-size:14px}
+.footer{
+  text-align:center;
+  color:#fff;
+  font-size:24px;
+  font-weight:900;
+  margin-top:10px
+}
+.processing{text-align:center;padding:30px}
+.spinner{
+  width:52px;height:52px;
+  border:5px solid #e5e7eb;
+  border-top:5px solid #6b5cff;
+  border-radius:50%;
+  animation:spin 1s linear infinite;
+  margin:0 auto 12px
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+pre{
+  background:#f8fafc;
+  border-radius:18px;
+  padding:16px;
+  white-space:pre-wrap;
+  font-size:14px
+}
+.copy{
+  background:#22c55e;
+  color:#fff;
+  border:none;
+  padding:14px;
+  width:100%;
+  border-radius:30px;
+  font-weight:800;
+  margin-top:14px
+}
+
+/* Super Stylish Popup */
+#custom-alert{
+  position: fixed;
+  top:50%;
+  left:50%;
+  transform: translate(-50%, -50%) scale(0);
+  background: linear-gradient(135deg,#ff4d4d,#ff2f7b);
+  color:#fff;
+  font-weight:700;
+  padding:20px 30px;
+  border-radius:25px;
+  font-size:16px;
+  text-align:center;
+  z-index:9999;
+  opacity:0;
+  box-shadow:0 10px 30px rgba(0,0,0,0.3);
+  transition: transform 0.5s cubic-bezier(0.68,-0.55,0.265,1.55), opacity 0.5s ease;
+}
+#custom-alert.show{
+  opacity:1;
+  transform: translate(-50%, -50%) scale(1);
+}
+</style>
+</head>
+
+<body>
+<div class="container">
+
+<div class="card" id="select">
+<div class="header">🛍️ REAL SELLER <small>PREMIUM ID STORE</small></div>
+<div class="badge">⚡ Limited Stock!</div>
+<div class="stock">ID Available: <span id="stock">0</span></div>
+<div class="note">Fresh verified IDs<br>Automatic delivery after payment<br>Email_Password: Kumar@123</div>
+
+<h4>Select Number of IDs</h4>
+<div class="options">
+ <div class="box" onclick="pick(1,this)">1 ID<span id="p1"></span></div>
+ <div class="box" onclick="pick(2,this)">2 IDs<span id="p2"></span></div>
+ <div class="box" onclick="pick(5,this)">5 IDs<span id="p5"></span></div>
+ <div class="box" onclick="pick(10,this)">10 IDs<span id="p10"></span></div>
+</div>
+
+<input class="custom" type="number" placeholder="Custom quantity" oninput="customQty(this.value)">
+<button class="buy" id="buy">Buy Now</button>
+
+<div class="icons">
+ <div class="icon"><div>🔒</div>Secure</div>
+ <div class="icon"><div>⚡</div>Instant</div>
+ <div class="icon" onclick="openWhatsApp()">
+    <div>
+        <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" 
+             alt="WhatsApp" 
+             style="width:24px;height:24px;">
+    </div>
+    WhatsApp
+ </div>
+</div>
+</div>
+
+<div class="card list">
+<p>✔ Do not change password</p>
+<p>✔ Do not sync via software</p>
+<p>✔ Avoid multiple IDs same IP</p>
+<p>✔ If pending contact support</p>
+</div>
+
+<div class="footer">Why Choose Our IDs?</div>
+
+<div class="card" id="payment" style="display:none">
+<h3>Scan & Pay</h3>
+<p>Qty: <b id="pq"></b></p>
+<p>Total: ₹<b id="pa"></b></p>
+<img id="qr" width="220" style="display:block;margin:auto">
+<input class="custom" id="utr" placeholder="Enter UTR (12 digits)">
+<button class="buy" onclick="submit()">Submit Payment</button>
+</div>
+
+<div class="card" id="processing" style="display:none">
+<div class="processing">
+<div class="spinner"></div>
+<p>Payment Processing…<br>Please wait</p>
+</div>
+</div>
+
+<div class="card" id="success" style="display:none">
+<h3>✅ IDs Delivered</h3>
+<pre id="ids"></pre>
+<button class="copy" onclick="copy()">Copy All IDs</button>
+</div>
+
+<!-- Super Popup -->
+<div id="custom-alert"></div>
+
+</div>
+
+<script type="module">
+import {initializeApp} from "https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js";
+import {getDatabase,ref,onValue,push,update} from "https://www.gstatic.com/firebasejs/12.8.0/firebase-database.js";
+
+const app=initializeApp({
+ apiKey:"AIzaSyChBGm2SO7uuW9gIhpFH-MDFzWs0gp9eps",
+ databaseURL:"https://database-7209-default-rtdb.firebaseio.com"
+});
+
+const db=getDatabase(app);
+const stockEl=document.getElementById("stock");
+const whatsappNumber="84947229295";
+const upi="airtelshop09@ybl";
+
+let qty=0,price=0,orderId="";
+
+// Super Stylish Alert Function
+function showAlert(msg){
+    const alertBox = document.getElementById("custom-alert");
+    alertBox.innerText = msg;
+    alertBox.classList.add("show");
+    setTimeout(()=>{alertBox.classList.remove("show");},2500);
+}
+
+// Live Stock Update
+onValue(ref(db,"stock"),snapshot=>{
+  const data=snapshot.val();
+  if(!data) stockEl.innerText=0;
+  else stockEl.innerText=Object.values(data).filter(id=>!id.sold).length;
+});
+
+// Price per ID
+onValue(ref(db,"settings/pricePerId"),s=>{
+ price=s.val()||0;
+ p1.innerText="₹"+price;
+ p2.innerText="₹"+price*2;
+ p5.innerText="₹"+price*5;
+ p10.innerText="₹"+price*10;
+});
+
+// Select Quantity
+window.pick=(q,e)=>{
+ qty=q;
+ document.querySelectorAll(".box").forEach(b=>b.classList.remove("active"));
+ e.classList.add("active");
+ buy.innerText=`Buy Now - ₹${qty*price}`;
+};
+
+// Custom Quantity
+window.customQty=v=>{
+ qty=+v;
+ document.querySelectorAll(".box").forEach(b=>b.classList.remove("active"));
+ if(qty>0) buy.innerText=`Buy Now - ₹${qty*price}`;
+};
+
+// Buy Button
+buy.onclick=()=>{
+ if(qty<=0) return showAlert("Enter valid quantity!");
+ orderId=push(ref(db,"orders"),{
+  qty,amount:qty*price,status:"created",time:Date.now()
+ }).key;
+
+ select.style.display="none";
+ payment.style.display="block";
+ pq.innerText=qty;
+ pa.innerText=qty*price;
+
+ const amount=qty*price;
+ const upiData=`upi://pay?pa=${upi}&pn=Islam%20ID%20Store&am=${amount}&cu=INR&mode=02&tn=ID%20Purchase`;
+ qr.src=`https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(upiData)}`;
+};
+
+// UTR Validation: exactly 12 digits
+function isValidUTR(utr){return /^\d{12}$/.test(utr);}
+
+// Submit Payment
+window.submit = () => {
+    const utrVal = utr.value.trim();
+    if(!utrVal) return showAlert("Enter UTR!");
+    if(!isValidUTR(utrVal)) return showAlert("Invalid UTR! Must be 12 digits.");
+
+    update(ref(db,"orders/"+orderId), {utr: utrVal, status:"pending"});
+
+    payment.style.display = "none";
+    processing.style.display = "block";
+
+    onValue(ref(db,"orders/"+orderId+"/status"), s => {
+        if(s.val() === "verified") load();
+    });
+};
+
+// Load Delivered IDs
+function load(){
+ onValue(ref(db,"deliveries/"+orderId),snap=>{
+  let t="";
+  snap.forEach(c=>{
+   const v=c.val();
+   t+=`${v.username}\n${v.password}\n${v.phone}\n${v.email}\n\n`;
+  });
+  ids.innerText=t.trim();
+  processing.style.display="none";
+  success.style.display="block";
+ },{onlyOnce:true});
+}
+
+// Copy IDs
+window.copy=()=>navigator.clipboard.writeText(ids.innerText);
+
+// Open WhatsApp
+window.openWhatsApp = () => {
+    window.open(`https://wa.me/${whatsappNumber}?text=Hello Support 👋`, "_blank");
+};
+</script>
+</body>
+</html>
