@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Panel</title>
+
+<style>
+*{box-sizing:border-box;font-family:system-ui}
+body{
+ margin:0;
+ min-height:100vh;
+ background:linear-gradient(180deg,#4f46e5,#6d6af5);
+ padding:18px;
+}
+.container{max-width:440px;margin:auto}
+.card{
+ background:#fff;
+ border-radius:22px;
+ padding:20px;
+ margin-bottom:18px;
+ box-shadow:0 15px 35px rgba(0,0,0,.25);
+}
+h2{text-align:center;color:#4f46e5;margin:0 0 14px}
+input,textarea,button{
+ width:100%;
+ padding:14px;
+ margin-top:12px;
+ border-radius:16px;
+ border:1.5px solid #ddd;
+ font-size:15px;
+}
+button{
+ border:none;
+ font-weight:800;
+ color:#fff;
+ background:#4f46e5;
+ cursor:pointer;
+}
+.logout{background:#ef4444}
+.order{
+ background:#f8fafc;
+ border-radius:16px;
+ padding:14px;
+ margin-top:12px;
+ font-size:14px;
+}
+.order b{display:block;margin-bottom:4px}
+.verify{background:#22c55e;margin-top:8px}
+</style>
+</head>
+
+<body>
+<div class="container">
+
+<!-- LOGIN -->
+<div class="card" id="loginCard">
+<h2>🔐 Admin Login</h2>
+<input id="email" placeholder="Admin Email">
+<input id="pass" type="password" placeholder="Password">
+<button onclick="login()">Login</button>
+</div>
+
+<!-- PANEL -->
+<div class="card" id="panel" style="display:none">
+<h2>⚙️ Admin Panel</h2>
+
+<input id="price" type="number" placeholder="Price per ID">
+<button onclick="savePrice()">Update Price</button>
+
+<hr style="margin:16px 0">
+
+<textarea id="ids" rows="6" placeholder="Add IDs (4 lines per ID)
+username
+password
+phone
+email"></textarea>
+<button onclick="addIDs()">Add IDs to Stock</button>
+
+<hr style="margin:16px 0">
+
+<h3>📦 Available Stock: <span id="stock">0</span></h3>
+
+<hr style="margin:16px 0">
+
+<h3>⏳ Pending Orders</h3>
+<div id="orders"></div>
+
+<button class="logout" onclick="logout()">Logout</button>
+
+<!-- Audio Alert -->
+<audio id="alertAudio" loop>
+ <source src="alert.mp3" type="audio/mpeg">
+</audio>
+
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js";
+import { getAuth, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-auth.js";
+import { getDatabase, ref, set, push, onValue, update } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-database.js";
+
+const app = initializeApp({
+ apiKey:"AIzaSyChBGm2SO7uuW9gIhpFH-MDFzWs0gp9eps",
+ databaseURL:"https://database-7209-default-rtdb.firebaseio.com"
+});
+
+const auth = getAuth(app);
+const db   = getDatabase(app);
+
+let audioStarted = false;
+
+/* LOGIN */
+window.login=()=> {
+ signInWithEmailAndPassword(auth,email.value.trim(),pass.value)
+ .then(()=>{
+  loginCard.style.display="none";
+  panel.style.display="block";
+  // Allow audio to play after login click
+  const audio = document.getElementById("alertAudio");
+  audio.play().catch(()=>console.log("Audio autoplay blocked, interaction needed"));
+  audioStarted = true;
+ })
+ .catch(e=>alert(e.message));
+};
+
+/* LOGOUT */
+window.logout=()=> {
+ signOut(auth).then(()=>{
+  panel.style.display="none";
+  loginCard.style.display="block";
+ });
+};
+
+/* PRICE */
+window.savePrice=()=> {
+ set(ref(db,"settings/pricePerId"),Number(price.value));
+ console.log("Price updated ✅");
+};
+
+/* ADD STOCK */
+window.addIDs=()=> {
+ const lines=ids.value.trim().split("\n");
+ if(lines.length%4!==0) {
+   console.log("Each ID needs 4 lines");
+   return;
+ }
+ for(let i=0;i<lines.length;i+=4){
+  push(ref(db,"stock"),{
+   username:lines[i],
+   password:lines[i+1],
+   phone:lines[i+2],
+   email:lines[i+3],
+   sold:false
+  });
+ }
+ ids.value="";
+ console.log("IDs added ✅");
+};
+
+/* STOCK COUNT */
+onValue(ref(db,"stock"),snap=>{
+ let c=0;
+ snap.forEach(s=>{ if(!s.val().sold) c++; });
+ stock.innerText=c;
+});
+
+/* PENDING ORDERS */
+onValue(ref(db,"orders"),snap=>{
+ orders.innerHTML="";
+ snap.forEach(o=>{
+  const v=o.val();
+  if(v.status==="pending"){
+   const d=document.createElement("div");
+   d.className="order";
+   d.innerHTML=`
+    <b>Order ID:</b> ${o.key}
+    <b>Qty:</b> ${v.qty}
+    <b>Amount:</b> ₹${v.amount}
+    <b>UTR:</b> ${v.utr || "N/A"}
+    <button class="verify" onclick="verify('${o.key}',${v.qty})">Verify & Deliver</button>
+   `;
+   orders.appendChild(d);
+
+   // Play alert sound and vibrate
+   if(audioStarted){
+     const audio = document.getElementById("alertAudio");
+     audio.play().catch(()=>console.log("Audio blocked"));
+     if(navigator.vibrate) navigator.vibrate([500,200,500,200]);
+   }
+  }
+ });
+});
+
+/* VERIFY + DELIVER */
+window.verify=(orderId,qty)=>{
+ onValue(ref(db,"stock"),snap=>{
+  let taken=[];
+  snap.forEach(s=>{
+   if(!s.val().sold && taken.length<qty){
+    taken.push({id:s.key,...s.val()});
+   }
+  });
+
+  if(taken.length<qty){
+   console.log("Not enough stock ❌");
+   return;
+  }
+
+  taken.forEach(id=>{
+   update(ref(db,"stock/"+id.id),{sold:true});
+   push(ref(db,"deliveries/"+orderId),{
+    username:id.username,
+    password:id.password,
+    phone:id.phone,
+    email:id.email
+   });
+  });
+
+  update(ref(db,"orders/"+orderId),{status:"verified"});
+  console.log("Order verified & delivered ✅");
+ });
+};
+</script>
+</body>
+</html>
