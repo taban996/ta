@@ -1,164 +1,169 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js";
-import { getDatabase, ref, onValue, push, update } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-database.js";
-
-/* 🔥 FIREBASE */
-const app = initializeApp({
-  apiKey: "AIzaSyChBGm2SO7uuW9gIhpFH-MDFzWs0gp9eps",
-  databaseURL: "https://database-7209-default-rtdb.firebaseio.com"
-});
-const db = getDatabase(app);
-
-/* 🎯 ELEMENTS */
-const stockEl = document.getElementById("stock");
-const buy = document.getElementById("buy");
-const whatsappNumber = "84947229295";
-const upi = "airtelshop09@ybl";
-
-let qty = 0, price = 0, orderId = "", stockCount = 0;
-
-/* 🔔 POPUP */
-function showAlert(msg){
-  const box = document.getElementById("custom-alert");
-  box.innerText = msg;
-  box.classList.add("show");
-  setTimeout(()=>box.classList.remove("show"),2500);
+*{box-sizing:border-box;font-family:system-ui}
+body{
+  margin:0;
+  background:linear-gradient(180deg,#5b4bdb,#7b6cf6);
+  padding:16px;
+}
+.container{max-width:420px;margin:auto}
+.card{
+  background:#fff;
+  border-radius:24px;
+  padding:18px;
+  margin-bottom:18px;
+  box-shadow:0 15px 35px rgba(0,0,0,.25)
+}
+.header{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  font-weight:800;
+  color:#6b5cff
+}
+.badge{
+  background:#ffebeb;
+  color:#ff3b3b;
+  padding:6px 14px;
+  border-radius:30px;
+  font-weight:700;
+  font-size:13px;
+  margin:12px auto;
+  width:max-content
+}
+.stock{
+  text-align:center;
+  font-size:22px;
+  font-weight:900;
+  color:#6b5cff
+}
+.note{
+  background:#f3f4ff;
+  border-radius:18px;
+  padding:14px;
+  font-size:13px;
+  color:#555;
+  margin-top:10px
+}
+.options{
+  display:grid;
+  grid-template-columns:repeat(2,1fr);
+  gap:14px;
+  margin-top:14px
+}
+.box{
+  background:#f4f6ff;
+  border-radius:18px;
+  padding:14px;
+  text-align:center;
+  font-weight:800;
+  cursor:pointer;
+  border:2px solid transparent
+}
+.box span{display:block;font-size:13px;color:#666;margin-top:4px}
+.box.active{
+  border-color:#6b5cff;
+  background:#eef0ff;
+  color:#6b5cff
+}
+.custom{
+  margin-top:12px;
+  padding:14px;
+  border-radius:16px;
+  border:1.5px solid #ddd;
+  width:100%
+}
+.buy{
+  width:100%;
+  margin-top:18px;
+  padding:16px;
+  border:none;
+  border-radius:40px;
+  font-size:17px;
+  font-weight:900;
+  color:#fff;
+  background:linear-gradient(90deg,#ff4d4d,#ff2f7b);
+  transition: transform 0.2s;
+}
+.buy:hover{transform: scale(1.05);}
+.icons{
+  display:flex;
+  justify-content:space-around;
+  margin-top:18px;
+  font-size:13px;
+  color:#555
+}
+.icon{text-align:center;cursor:pointer}
+.icon div{
+  width:44px;height:44px;
+  border-radius:50%;
+  background:#eef0ff;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  margin:auto auto 6px;
+  color:#6b5cff;
+  font-size:20px;
+}
+.list{
+  background:#6b5cff;
+  color:#fff;
+  border-radius:22px;
+  padding:18px
+}
+.list p{margin:10px 0;font-size:14px}
+.footer{
+  text-align:center;
+  color:#fff;
+  font-size:24px;
+  font-weight:900;
+  margin-top:10px
+}
+.processing{text-align:center;padding:30px}
+.spinner{
+  width:52px;height:52px;
+  border:5px solid #e5e7eb;
+  border-top:5px solid #6b5cff;
+  border-radius:50%;
+  animation:spin 1s linear infinite;
+  margin:0 auto 12px
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+pre{
+  background:#f8fafc;
+  border-radius:18px;
+  padding:16px;
+  white-space:pre-wrap;
+  font-size:14px
+}
+.copy{
+  background:#22c55e;
+  color:#fff;
+  border:none;
+  padding:14px;
+  width:100%;
+  border-radius:30px;
+  font-weight:800;
+  margin-top:14px
 }
 
-/* ⏰ SHOP CLOSED (10PM–5AM) */
-function shopClosed(){
-  const h = new Date().getHours();
-  return h >= 22 || h < 5;
+/* Super Stylish Popup */
+#custom-alert{
+  position: fixed;
+  top:50%;
+  left:50%;
+  transform: translate(-50%, -50%) scale(0);
+  background: linear-gradient(135deg,#ff4d4d,#ff2f7b);
+  color:#fff;
+  font-weight:700;
+  padding:20px 30px;
+  border-radius:25px;
+  font-size:16px;
+  text-align:center;
+  z-index:9999;
+  opacity:0;
+  box-shadow:0 10px 30px rgba(0,0,0,0.3);
+  transition: transform 0.5s cubic-bezier(0.68,-0.55,0.265,1.55), opacity 0.5s ease;
 }
-
-/* 📦 LIVE STOCK */
-onValue(ref(db,"stock"),snap=>{
-  const data = snap.val();
-  stockCount = data ? Object.values(data).filter(i=>!i.sold).length : 0;
-  stockEl.innerText = stockCount;
-
-  buy.disabled = stockCount === 0;
-});
-
-/* 💰 PRICE */
-onValue(ref(db,"settings/pricePerId"),s=>{
-  price = s.val() || 0;
-  p1.innerText = "₹"+price;
-  p2.innerText = "₹"+price*2;
-  p5.innerText = "₹"+price*5;
-  p10.innerText = "₹"+price*10;
-});
-
-/* 📌 PICK QTY */
-window.pick = (q,e)=>{
-  if(stockCount===0) return showAlert("❌ Stock Empty");
-  if(shopClosed()) return showAlert("⏰ Shop closed (10PM–5AM)");
-
-  qty = q;
-  document.querySelectorAll(".box").forEach(b=>b.classList.remove("active"));
-  e.classList.add("active");
-  buy.innerText = `Buy Now - ₹${qty*price}`;
-};
-
-/* ✍️ CUSTOM QTY */
-window.customQty = v=>{
-  qty = +v;
-  if(qty>0) buy.innerText = `Buy Now - ₹${qty*price}`;
-};
-
-/* 🛒 BUY */
-buy.onclick = ()=>{
-  if(stockCount===0) return showAlert("❌ Stock Empty");
-  if(shopClosed()) return showAlert("⏰ Shop closed (10PM–5AM)");
-  if(qty<=0) return showAlert("Enter valid quantity");
-  if(qty>stockCount) return showAlert("❌ Not enough stock");
-
-  orderId = push(ref(db,"orders"),{
-    qty,
-    amount: qty*price,
-    status: "created",
-    time: Date.now()
-  }).key;
-
-  select.style.display="none";
-  payment.style.display="block";
-  pq.innerText = qty;
-  pa.innerText = qty*price;
-
-  const upiData = `upi://pay?pa=${upi}&pn=ID%20Store&am=${qty*price}&cu=INR`;
-  qr.src = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(upiData)}`;
-};
-
-/* ✅ UTR */
-function isValidUTR(u){ return /^\d{12}$/.test(u); }
-
-/* 📤 SUBMIT */
-window.submit = ()=>{
-  const u = utr.value.trim();
-  if(!u) return showAlert("Enter UTR");
-  if(!isValidUTR(u)) return showAlert("Invalid UTR");
-
-  update(ref(db,"orders/"+orderId),{
-    utr: u,
-    status: "pending"
-  });
-
-  payment.style.display="none";
-  processing.style.display="block";
-
-  onValue(ref(db,"orders/"+orderId+"/status"),s=>{
-    if(s.val()==="verified") load();
-  });
-};
-
-/* 📥 LOAD IDS + 🎁 GIFT */
-function load(){
-  onValue(ref(db,"deliveries/"+orderId),snap=>{
-    let t="";
-    snap.forEach(c=>{
-      const v=c.val();
-      t+=`${v.username}\n${v.password}\n${v.phone}\n${v.email}\n\n`;
-    });
-
-    ids.innerText = t.trim();
-    processing.style.display="none";
-    success.style.display="block";
-
-    /* 🎁 GIFT ANIMATION */
-    playGiftAnimation();
-
-  },{onlyOnce:true});
+#custom-alert.show{
+  opacity:1;
+  transform: translate(-50%, -50%) scale(1);
 }
-
-/* 📋 COPY */
-window.copy = ()=>navigator.clipboard.writeText(ids.innerText);
-
-/* 📞 WHATSAPP */
-window.openWhatsApp = ()=>{
-  window.open(`https://wa.me/${whatsappNumber}?text=Hello Support 👋`,"_blank");
-};
-
-/* 🎁 GIFT + 🎆 CONFETTI */
-window.playGiftAnimation = ()=>{
-  const wrapper = document.getElementById("gift-wrapper");
-  const box = document.getElementById("gift-box");
-
-  wrapper.style.display="flex";
-  box.classList.add("open");
-
-  for(let i=0;i<40;i++){
-    const c=document.createElement("div");
-    c.className="confetti";
-    c.style.background=`hsl(${Math.random()*360},90%,60%)`;
-    c.style.left="70px";
-    c.style.top="70px";
-    c.style.setProperty("--x",(Math.random()*300-150)+"px");
-    c.style.setProperty("--y",(Math.random()*-250)+"px");
-    box.appendChild(c);
-    setTimeout(()=>c.remove(),1800);
-  }
-
-  setTimeout(()=>{
-    wrapper.style.display="none";
-    ids.style.display="block";
-  },1400);
-};
