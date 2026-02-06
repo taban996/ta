@@ -25,9 +25,10 @@ function showAlert(msg){
 
 /* ⏰ SHOP TIME CHECK (10PM–5AM CLOSED) */
 function shopClosed(){
- const h=new Date().getHours();
- return h>=22 || h<5;
+ const h = new Date().getHours();
+ return h >= 22 && h < 23;
 }
+
 
 /* 📦 LIVE STOCK */
 onValue(ref(db,"stock"),snapshot=>{
