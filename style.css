@@ -162,6 +162,67 @@ pre{
   opacity:0;
   box-shadow:0 10px 30px rgba(0,0,0,0.3);
   transition: transform 0.5s cubic-bezier(0.68,-0.55,0.265,1.55), opacity 0.5s ease;
+
+  /* 🎁 Gift Box Animation */
+#gift-area{
+  display:flex;
+  justify-content:center;
+  margin:30px 0;
+}
+
+.gift-box{
+  position:relative;
+  width:120px;
+  height:120px;
+  cursor:pointer;
+  animation:shake 1.2s infinite;
+}
+
+@keyframes shake{
+  0%,100%{transform:rotate(0)}
+  25%{transform:rotate(2deg)}
+  75%{transform:rotate(-2deg)}
+}
+
+.gift-box .box{
+  width:100%;
+  height:100%;
+  background:linear-gradient(135deg,#ff4d4d,#ff2f7b);
+  border-radius:18px;
+}
+
+.gift-box .lid{
+  position:absolute;
+  top:-25px;
+  left:0;
+  width:100%;
+  height:30px;
+  background:#ff8fa3;
+  border-radius:18px 18px 6px 6px;
+  transform-origin:bottom;
+  transition:transform 0.8s ease;
+}
+
+/* 🎉 Open */
+.gift-box.open .lid{
+  transform:rotateX(120deg);
+}
+
+.confetti{
+  position:absolute;
+  width:8px;
+  height:8px;
+  background:gold;
+  animation:fall 1.8s linear forwards;
+}
+
+@keyframes fall{
+  to{
+    transform:translateY(180px) rotate(360deg);
+    opacity:0;
+  }
+}
+
 }
 #custom-alert.show{
   opacity:1;
