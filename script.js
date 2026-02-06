@@ -131,22 +131,25 @@ window.openWhatsApp=()=>{
 };
 
 window.playGiftAnimation = ()=>{
-  const gift=document.querySelector(".gift-box");
-  gift.classList.add("open");
+  const box = document.getElementById("gift-box");
+  box.classList.add("open");
 
-  // 🎉 Confetti blast
-  for(let i=0;i<25;i++){
+  // 🎆 Patakhe / Confetti blast
+  for(let i=0;i<40;i++){
     const c=document.createElement("div");
     c.className="confetti";
-    c.style.left=Math.random()*120+"px";
     c.style.background=`hsl(${Math.random()*360},90%,60%)`;
-    gift.appendChild(c);
+    c.style.left="70px";
+    c.style.top="70px";
+    c.style.setProperty("--x",(Math.random()*300-150)+"px");
+    c.style.setProperty("--y",(Math.random()*-250)+"px");
+    box.appendChild(c);
     setTimeout(()=>c.remove(),1800);
   }
 
-  // 📦 Show IDs
+  // 📦 IDs reveal
   setTimeout(()=>{
-    document.getElementById("gift-area").style.display="none";
+    document.getElementById("gift-wrapper").style.display="none";
     document.getElementById("ids").style.display="block";
-  },1200);
+  },1400);
 };
