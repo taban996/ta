@@ -72,7 +72,7 @@ window.customQty=v=>{
 /* 🛒 BUY */
 buy.onclick=()=>{
  if(stockCount===0) return showAlert("❌ Stock Empty");
- if(shopClosed()) return showAlert("⏰ 10PM – 5AM Shop Closed");
+ if(shopClosed()) return showAlert("⏰ 10PM – 11PM Shop Closed");
  if(qty<=0) return showAlert("Enter valid quantity");
  if(qty>stockCount) return showAlert("❌ Not enough stock");
 
