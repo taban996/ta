@@ -23,12 +23,11 @@ function showAlert(msg){
  setTimeout(()=>alertBox.classList.remove("show"),2500);
 }
 
-/* ⏰ SHOP TIME CHECK (10PM–5AM CLOSED) */
+/* ⏰ SHOP TIME CHECK (12AM–6AM CLOSED) */
 function shopClosed(){
  const h = new Date().getHours();
- return h >= 22 && h < 23;
+ return h >= 0 && h < 6;
 }
-
 
 /* 📦 LIVE STOCK */
 onValue(ref(db,"stock"),snapshot=>{
@@ -56,7 +55,7 @@ onValue(ref(db,"settings/pricePerId"),s=>{
 /* 📌 PICK QTY */
 window.pick=(q,e)=>{
  if(stockCount===0) return showAlert("❌ Stock Empty");
- if(shopClosed()) return showAlert("⏰ 10PM – 5AM Shop Closed");
+ if(shopClosed()) return showAlert("⏰ 12AM – 6AM Shop Closed");
 
  qty=q;
  document.querySelectorAll(".box").forEach(b=>b.classList.remove("active"));
@@ -73,7 +72,7 @@ window.customQty=v=>{
 /* 🛒 BUY */
 buy.onclick=()=>{
  if(stockCount===0) return showAlert("❌ Stock Empty");
- if(shopClosed()) return showAlert("⏰ 10PM – 11PM Shop Closed");
+ if(shopClosed()) return showAlert("⏰ 12AM – 6AM Shop Closed");
  if(qty<=0) return showAlert("Enter valid quantity");
  if(qty>stockCount) return showAlert("❌ Not enough stock");
 
