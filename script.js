@@ -7,27 +7,43 @@ const app=initializeApp({
 });
 
 const db=getDatabase(app);
+
 const stockEl=document.getElementById("stock");
+const buy=document.getElementById("buy");
 const whatsappNumber="84947229295";
 const upi="airtelshop09@ybl";
 
-let qty=0,price=0,orderId="";
+let qty=0,price=0,orderId="",stockCount=0;
 
-// Super Stylish Alert
+/* 🔔 POPUP */
 function showAlert(msg){
-    const alertBox=document.getElementById("custom-alert");
-    alertBox.innerText=msg;
-    alertBox.classList.add("show");
-    setTimeout(()=>{alertBox.classList.remove("show");},2500);
+ const alertBox=document.getElementById("custom-alert");
+ alertBox.innerText=msg;
+ alertBox.classList.add("show");
+ setTimeout(()=>alertBox.classList.remove("show"),2500);
 }
 
-// Live Stock Update
+/* ⏰ SHOP TIME CHECK (10PM–5AM CLOSED) */
+function shopClosed(){
+ const h=new Date().getHours();
+ return h>=22 || h<5;
+}
+
+/* 📦 LIVE STOCK */
 onValue(ref(db,"stock"),snapshot=>{
-  const data=snapshot.val();
-  stockEl.innerText=!data?0:Object.values(data).filter(id=>!id.sold).length;
+ const data=snapshot.val();
+ stockCount=data?Object.values(data).filter(id=>!id.sold).length:0;
+ stockEl.innerText=stockCount;
+
+ if(stockCount===0){
+   buy.disabled=true;
+   showAlert("❌ 0 IDs Stock Available");
+ }else{
+   buy.disabled=false;
+ }
 });
 
-// Price per ID
+/* 💰 PRICE */
 onValue(ref(db,"settings/pricePerId"),s=>{
  price=s.val()||0;
  p1.innerText="₹"+price;
@@ -36,24 +52,30 @@ onValue(ref(db,"settings/pricePerId"),s=>{
  p10.innerText="₹"+price*10;
 });
 
-// Select Quantity
+/* 📌 PICK QTY */
 window.pick=(q,e)=>{
+ if(stockCount===0) return showAlert("❌ Stock Empty");
+ if(shopClosed()) return showAlert("⏰ 10PM – 5AM Shop Closed");
+
  qty=q;
  document.querySelectorAll(".box").forEach(b=>b.classList.remove("active"));
  e.classList.add("active");
  buy.innerText=`Buy Now - ₹${qty*price}`;
 };
 
-// Custom Quantity
+/* ✍️ CUSTOM QTY */
 window.customQty=v=>{
  qty=+v;
- document.querySelectorAll(".box").forEach(b=>b.classList.remove("active"));
  if(qty>0) buy.innerText=`Buy Now - ₹${qty*price}`;
 };
 
-// Buy Button
+/* 🛒 BUY */
 buy.onclick=()=>{
- if(qty<=0) return showAlert("Enter valid quantity!");
+ if(stockCount===0) return showAlert("❌ Stock Empty");
+ if(shopClosed()) return showAlert("⏰ 10PM – 5AM Shop Closed");
+ if(qty<=0) return showAlert("Enter valid quantity");
+ if(qty>stockCount) return showAlert("❌ Not enough stock");
+
  orderId=push(ref(db,"orders"),{
   qty,amount:qty*price,status:"created",time:Date.now()
  }).key;
@@ -63,21 +85,20 @@ buy.onclick=()=>{
  pq.innerText=qty;
  pa.innerText=qty*price;
 
- const amount=qty*price;
- const upiData=`upi://pay?pa=${upi}&pn=Islam%20ID%20Store&am=${amount}&cu=INR&mode=02&tn=ID%20Purchase`;
+ const upiData=`upi://pay?pa=${upi}&pn=ID%20Store&am=${qty*price}&cu=INR`;
  qr.src=`https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(upiData)}`;
 };
 
-// UTR Validation
-function isValidUTR(utr){return /^\d{12}$/.test(utr);}
+/* ✅ UTR CHECK */
+function isValidUTR(u){return /^\d{12}$/.test(u);}
 
-// Submit Payment
+/* 📤 SUBMIT PAYMENT */
 window.submit=()=>{
- const utrVal=utr.value.trim();
- if(!utrVal) return showAlert("Enter UTR!");
- if(!isValidUTR(utrVal)) return showAlert("Invalid UTR! Must be 12 digits.");
+ const u=utr.value.trim();
+ if(!u) return showAlert("Enter UTR");
+ if(!isValidUTR(u)) return showAlert("Invalid UTR");
 
- update(ref(db,"orders/"+orderId),{utr:utrVal,status:"pending"});
+ update(ref(db,"orders/"+orderId),{utr:u,status:"pending"});
 
  payment.style.display="none";
  processing.style.display="block";
@@ -87,7 +108,7 @@ window.submit=()=>{
  });
 };
 
-// Load Delivered IDs
+/* 📥 LOAD IDS */
 function load(){
  onValue(ref(db,"deliveries/"+orderId),snap=>{
   let t="";
@@ -101,8 +122,10 @@ function load(){
  },{onlyOnce:true});
 }
 
-// Copy IDs
+/* 📋 COPY */
 window.copy=()=>navigator.clipboard.writeText(ids.innerText);
 
-// Open WhatsApp
-window.openWhatsApp=()=>{window.open(`https://wa.me/${whatsappNumber}?text=Hello Support 👋`,"_blank");};
+/* 📞 WHATSAPP */
+window.openWhatsApp=()=>{
+ window.open(`https://wa.me/${whatsappNumber}?text=Hello Support 👋`,"_blank");
+};
