@@ -129,3 +129,24 @@ window.copy=()=>navigator.clipboard.writeText(ids.innerText);
 window.openWhatsApp=()=>{
  window.open(`https://wa.me/${whatsappNumber}?text=Hello Support 👋`,"_blank");
 };
+
+window.playGiftAnimation = ()=>{
+  const gift=document.querySelector(".gift-box");
+  gift.classList.add("open");
+
+  // 🎉 Confetti blast
+  for(let i=0;i<25;i++){
+    const c=document.createElement("div");
+    c.className="confetti";
+    c.style.left=Math.random()*120+"px";
+    c.style.background=`hsl(${Math.random()*360},90%,60%)`;
+    gift.appendChild(c);
+    setTimeout(()=>c.remove(),1800);
+  }
+
+  // 📦 Show IDs
+  setTimeout(()=>{
+    document.getElementById("gift-area").style.display="none";
+    document.getElementById("ids").style.display="block";
+  },1200);
+};
