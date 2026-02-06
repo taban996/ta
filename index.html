@@ -67,9 +67,20 @@
 </div>
 
 <div class="card" id="success" style="display:none">
-<h3>✅ IDs Delivered</h3>
-<pre id="ids"></pre>
-<button class="copy" onclick="copy()">Copy All IDs</button>
+  <h3>✅ IDs Delivered</h3>
+
+  <!-- 🎁 GIFT ANIMATION AREA -->
+  <div id="gift-area">
+    <div class="gift-box" onclick="playGiftAnimation()">
+      <div class="lid"></div>
+      <div class="box"></div>
+    </div>
+  </div>
+
+  <!-- 📦 IDs OUTPUT -->
+  <pre id="ids" style="display:none"></pre>
+
+  <button class="copy" onclick="copy()">Copy All IDs</button>
 </div>
 
 <!-- Super Popup -->
