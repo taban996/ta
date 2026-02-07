@@ -11,7 +11,7 @@ const db=getDatabase(app);
 const stockEl=document.getElementById("stock");
 const buy=document.getElementById("buy");
 const whatsappNumber="84947229295";
-const upi="airtelshop09@ybl";
+const upi="ar9279893@okaxis";
 
 let qty=0,price=0,orderId="",stockCount=0;
 
