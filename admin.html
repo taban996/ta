@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -39,6 +38,9 @@ button{
  cursor:pointer;
 }
 .logout{background:#ef4444}
+.verify{background:#22c55e}
+.reject{background:#ef4444}
+.toggle{background:#0ea5e9}
 .order{
  background:#f8fafc;
  border-radius:16px;
@@ -46,8 +48,7 @@ button{
  margin-top:12px;
  font-size:14px;
 }
-.order b{display:block;margin-bottom:4px}
-.verify{background:#22c55e;margin-top:8px}
+.stockItem{font-size:13px;padding:6px 0}
 </style>
 </head>
 
@@ -66,51 +67,50 @@ button{
 <div class="card" id="panel" style="display:none">
 <h2>⚙️ Admin Panel</h2>
 
+<button class="toggle" onclick="toggleShop()" id="shopBtn">
+Loading shop status...
+</button>
+
 <input id="price" type="number" placeholder="Price per ID">
 <button onclick="savePrice()">Update Price</button>
 
-<hr style="margin:16px 0">
+<hr>
 
-<textarea id="ids" rows="6" placeholder="Add IDs (4 lines per ID)
-username
+<textarea id="ids" rows="6" placeholder="username
 password
 phone
 email"></textarea>
-<button onclick="addIDs()">Add IDs to Stock</button>
+<button onclick="addIDs()">Add IDs</button>
 
-<hr style="margin:16px 0">
+<hr>
 
-<h3>📦 Available Stock: <span id="stock">0</span></h3>
+<h3>📦 Stock Status</h3>
+<div id="stockList"></div>
+<h3>Total Available: <span id="stock">0</span></h3>
 
-<hr style="margin:16px 0">
+<hr>
 
 <h3>⏳ Pending Orders</h3>
 <div id="orders"></div>
 
 <button class="logout" onclick="logout()">Logout</button>
-
-<!-- 🔔 SOUND -->
 <audio id="alertAudio" src="beep.mp3" loop></audio>
-
 </div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-auth.js";
-import { getDatabase, ref, set, push, onValue, update, get }
+import { getDatabase, ref, set, push, onValue, update, get, remove }
 from "https://www.gstatic.com/firebasejs/12.8.0/firebase-database.js";
 
-/* 🔥 FIREBASE */
 const app = initializeApp({
  apiKey:"AIzaSyChBGm2SO7uuW9gIhpFH-MDFzWs0gp9eps",
  databaseURL:"https://database-7209-default-rtdb.firebaseio.com"
 });
-const auth = getAuth(app);
-const db   = getDatabase(app);
+const auth=getAuth(app);
+const db=getDatabase(app);
 
-/* 🔔 SOUND FLAGS */
-let audioAllowed=false;
-let isBeeping=false;
+let audioAllowed=false,isBeeping=false;
 
 /* LOGIN */
 window.login=()=>{
@@ -118,131 +118,102 @@ window.login=()=>{
  .then(()=>{
   loginCard.style.display="none";
   panel.style.display="block";
-
-  const audio=document.getElementById("alertAudio");
-  audio.play().then(()=>{
-    audio.pause();
-    audio.currentTime=0;
-    audioAllowed=true;
-  }).catch(()=>{});
+  alertAudio.play().then(()=>{alertAudio.pause();audioAllowed=true}).catch(()=>{});
  })
  .catch(e=>alert(e.message));
 };
 
-/* LOGOUT */
-window.logout=()=>{
- signOut(auth).then(()=>{
-  panel.style.display="none";
-  loginCard.style.display="block";
- });
+window.logout=()=>signOut(auth).then(()=>{
+ panel.style.display="none";
+ loginCard.style.display="block";
+});
+
+/* SHOP OPEN / CLOSE */
+onValue(ref(db,"settings/shopOpen"),s=>{
+ const open=s.val();
+ shopBtn.innerText=open?"🟢 SHOP OPEN":"🔴 SHOP CLOSED";
+ shopBtn.style.background=open?"#22c55e":"#ef4444";
+});
+
+window.toggleShop=async()=>{
+ const s=await get(ref(db,"settings/shopOpen"));
+ await set(ref(db,"settings/shopOpen"),!s.val());
 };
 
 /* PRICE */
-window.savePrice=()=>{
- set(ref(db,"settings/pricePerId"),Number(price.value));
-};
+window.savePrice=()=>set(ref(db,"settings/pricePerId"),Number(price.value));
 
 /* ADD STOCK */
 window.addIDs=()=>{
- const lines=ids.value.trim().split("\n");
- if(lines.length%4!==0) return;
-
- for(let i=0;i<lines.length;i+=4){
+ const l=ids.value.trim().split("\n");
+ if(l.length%4!==0) return alert("Invalid format");
+ for(let i=0;i<l.length;i+=4){
   push(ref(db,"stock"),{
-   username:lines[i],
-   password:lines[i+1],
-   phone:lines[i+2],
-   email:lines[i+3],
-   sold:false
+   username:l[i],
+   password:l[i+1],
+   phone:l[i+2],
+   email:l[i+3],
+   addedAt:Date.now()
   });
  }
  ids.value="";
 };
 
-/* STOCK COUNT */
+/* STOCK VIEW */
 onValue(ref(db,"stock"),snap=>{
- let c=0;
- snap.forEach(s=>{ if(!s.val().sold) c++; });
+ stockList.innerHTML="";
+ let c=0,i=1;
+ snap.forEach(s=>{
+  c++;
+  stockList.innerHTML+=`<div class="stockItem">ID #${i++} ✅</div>`;
+ });
  stock.innerText=c;
 });
 
-/* 🔔 PENDING ORDERS + CONTINUOUS BEEP */
+/* ORDERS */
 onValue(ref(db,"orders"),snap=>{
  orders.innerHTML="";
- let pending=0;
-
+ let p=0;
  snap.forEach(o=>{
   const v=o.val();
   if(v.status==="pending"){
-   pending++;
-
-   const d=document.createElement("div");
-   d.className="order";
-   d.innerHTML=`
-    <b>Order ID:</b> ${o.key}
-    <b>Qty:</b> ${v.qty}
-    <b>Amount:</b> ₹${v.amount}
-    <b>UTR:</b> ${v.utr||"N/A"}
-    <button class="verify" onclick="verify('${o.key}',${v.qty})">
-     Verify & Deliver
-    </button>
-   `;
-   orders.appendChild(d);
+   p++;
+   orders.innerHTML+=`
+    <div class="order">
+     <b>Order:</b> ${o.key}
+     <b>Qty:</b> ${v.qty}
+     <b>UTR:</b> ${v.utr}
+     <button class="verify" onclick="verify('${o.key}',${v.qty})">Verify</button>
+     <button class="reject" onclick="reject('${o.key}')">Reject</button>
+    </div>`;
   }
  });
-
- const audio=document.getElementById("alertAudio");
-
- if(pending>0 && audioAllowed && !isBeeping){
-  audio.currentTime=0;
-  audio.play().catch(()=>{});
-  isBeeping=true;
- }
-
- if(pending===0 && isBeeping){
-  audio.pause();
-  audio.currentTime=0;
-  isBeeping=false;
- }
+ if(p>0 && audioAllowed && !isBeeping){alertAudio.play();isBeeping=true}
+ if(p===0 && isBeeping){alertAudio.pause();isBeeping=false}
 });
 
-/* ✅ VERIFY – BUG FIXED */
-window.verify=async(orderId,qty)=>{
- const orderRef=ref(db,"orders/"+orderId);
- const orderSnap=await get(orderRef);
-
- if(!orderSnap.exists()) return;
- if(orderSnap.val().status!=="pending") return;
-
+/* VERIFY – FIFO + DELETE FROM DB */
+window.verify=async(id,qty)=>{
+ const orderRef=ref(db,"orders/"+id);
  await update(orderRef,{status:"processing"});
-
- const stockSnap=await get(ref(db,"stock"));
- let selected=[];
-
- stockSnap.forEach(s=>{
-  if(!s.val().sold && selected.length<qty){
-   selected.push({id:s.key,...s.val()});
-  }
+ const snap=await get(ref(db,"stock"));
+ let picked=[];
+ snap.forEach(s=>{
+  if(picked.length<qty) picked.push({k:s.key,...s.val()});
  });
-
- if(selected.length<qty){
-  await update(orderRef,{status:"pending"});
-  alert("Not enough stock");
-  return;
+ if(picked.length<qty) return alert("No stock");
+ for(const it of picked){
+  await remove(ref(db,"stock/"+it.k)); // 🔥 DELETE SOLD ID
+  await push(ref(db,"deliveries/"+id),it);
  }
-
- for(const item of selected){
-  await update(ref(db,"stock/"+item.id),{sold:true});
-  await push(ref(db,"deliveries/"+orderId),{
-   username:item.username,
-   password:item.password,
-   phone:item.phone,
-   email:item.email
-  });
- }
-
  await update(orderRef,{status:"verified"});
- alert("✅ "+qty+" ID delivered");
+ alert("Delivered");
+};
+
+/* REJECT */
+window.reject=async(id)=>{
+ await remove(ref(db,"orders/"+id));
+ await set(ref(db,"rejected/"+id),{msg:"YOUR PAYMENT NOT MATCH"});
 };
 </script>
 </body>
