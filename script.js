@@ -20,7 +20,7 @@ const stockEl = document.getElementById("stock");
 const buyBtn = document.getElementById("buy");
 
 /* ⚙️ CONFIG */
-const upi = "ar9279893@okaxis";
+const upi = "airtelshop09@ibl";
 const whatsappNumber = "918235060891";
 
 /* 🧠 STATE */
